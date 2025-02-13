@@ -3,7 +3,7 @@
 # @from </a>
 spring:
   application:
-    name: tcl-mianshi-boot
+    name: mianshi-springboot
   # 默认 dev 环境
   profiles:
     active: dev
