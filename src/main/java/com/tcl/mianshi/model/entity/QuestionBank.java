@@ -1,9 +1,6 @@
 package com.tcl.mianshi.model.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.util.Date;
@@ -41,8 +38,6 @@ public class QuestionBank {
      */
     private Long userId;
 
-    private String tags;
-
     /**
      * 编辑时间
      */
@@ -63,4 +58,7 @@ public class QuestionBank {
      */
     @TableLogic
     private Integer isDelete;
+
+    @TableField(exist = false)
+    private static final long serialVersionUID = 1L;
 }

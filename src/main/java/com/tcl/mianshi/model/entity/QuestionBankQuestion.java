@@ -1,6 +1,7 @@
 package com.tcl.mianshi.model.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -30,8 +31,6 @@ public class QuestionBankQuestion {
      */
     private Long questionId;
 
-    private String title;
-
     /**
      * 创建用户 id
      */
@@ -46,4 +45,7 @@ public class QuestionBankQuestion {
      * 更新时间
      */
     private Date updateTime;
+
+    @TableField(exist = false)
+    private static final long serialVersionUID = 1L;
 }

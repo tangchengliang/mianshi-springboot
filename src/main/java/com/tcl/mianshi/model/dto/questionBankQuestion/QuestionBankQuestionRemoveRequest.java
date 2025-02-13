@@ -3,17 +3,12 @@ package com.tcl.mianshi.model.dto.questionBankQuestion;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
- * 创建题库关联表请求
- *
- * @author tcl
- *
+ * 移除题目题库关系请求
  */
 @Data
-public class QuestionBankQuestionAddRequest implements Serializable {
-
+public class QuestionBankQuestionRemoveRequest implements Serializable {
     /**
      * 题库 id
      */

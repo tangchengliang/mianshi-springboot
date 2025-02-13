@@ -9,14 +9,17 @@ import com.tcl.mianshi.common.ResultUtils;
 import com.tcl.mianshi.constant.UserConstant;
 import com.tcl.mianshi.exception.BusinessException;
 import com.tcl.mianshi.exception.ThrowUtils;
+import com.tcl.mianshi.model.dto.question.QuestionQueryRequest;
 import com.tcl.mianshi.model.dto.questionBank.QuestionBankAddRequest;
 import com.tcl.mianshi.model.dto.questionBank.QuestionBankEditRequest;
 import com.tcl.mianshi.model.dto.questionBank.QuestionBankQueryRequest;
 import com.tcl.mianshi.model.dto.questionBank.QuestionBankUpdateRequest;
+import com.tcl.mianshi.model.entity.Question;
 import com.tcl.mianshi.model.entity.QuestionBank;
 import com.tcl.mianshi.model.entity.User;
 import com.tcl.mianshi.model.vo.QuestionBankVO;
 import com.tcl.mianshi.service.QuestionBankService;
+import com.tcl.mianshi.service.QuestionService;
 import com.tcl.mianshi.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -42,16 +45,20 @@ public class QuestionBankController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private QuestionService questionService;
+
     // region 增删改查
 
     /**
-     * 创建题库表
+     * 创建题库
      *
      * @param questionBankAddRequest
      * @param request
      * @return
      */
     @PostMapping("/add")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Long> addQuestionBank(@RequestBody QuestionBankAddRequest questionBankAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(questionBankAddRequest == null, ErrorCode.PARAMS_ERROR);
         // todo 在此处将实体类和 DTO 进行转换
@@ -71,13 +78,14 @@ public class QuestionBankController {
     }
 
     /**
-     * 删除题库表
+     * 删除题库
      *
      * @param deleteRequest
      * @param request
      * @return
      */
     @PostMapping("/delete")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> deleteQuestionBank(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -98,7 +106,7 @@ public class QuestionBankController {
     }
 
     /**
-     * 更新题库表（仅管理员可用）
+     * 更新题库（仅管理员可用）
      *
      * @param questionBankUpdateRequest
      * @return
@@ -125,23 +133,35 @@ public class QuestionBankController {
     }
 
     /**
-     * 根据 id 获取题库表（封装类）
+     * 根据 id 获取题库（封装类）
      *
-     * @param id
+     * @param questionBankQueryRequest
      * @return
      */
     @GetMapping("/get/vo")
-    public BaseResponse<QuestionBankVO> getQuestionBankVOById(long id, HttpServletRequest request) {
+    public BaseResponse<QuestionBankVO> getQuestionBankVOById(QuestionBankQueryRequest questionBankQueryRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(questionBankQueryRequest == null, ErrorCode.PARAMS_ERROR);
+        Long id = questionBankQueryRequest.getId();
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         // 查询数据库
         QuestionBank questionBank = questionBankService.getById(id);
         ThrowUtils.throwIf(questionBank == null, ErrorCode.NOT_FOUND_ERROR);
+        // 查询题库封装类
+        QuestionBankVO questionBankVO = questionBankService.getQuestionBankVO(questionBank, request);
+        // 是否要关联查询题库下的题目列表
+        boolean needQueryQuestionList = questionBankQueryRequest.isNeedQueryQuestionList();
+        if (needQueryQuestionList) {
+            QuestionQueryRequest questionQueryRequest = new QuestionQueryRequest();
+            questionQueryRequest.setQuestionBankId(id);
+            Page<Question> questionPage = questionService.listQuestionByPage(questionQueryRequest);
+            questionBankVO.setQuestionPage(questionPage);
+        }
         // 获取封装类
-        return ResultUtils.success(questionBankService.getQuestionBankVO(questionBank, request));
+        return ResultUtils.success(questionBankVO);
     }
 
     /**
-     * 分页获取题库表列表（仅管理员可用）
+     * 分页获取题库列表（仅管理员可用）
      *
      * @param questionBankQueryRequest
      * @return
@@ -158,7 +178,7 @@ public class QuestionBankController {
     }
 
     /**
-     * 分页获取题库表列表（封装类）
+     * 分页获取题库列表（封装类）
      *
      * @param questionBankQueryRequest
      * @param request
@@ -166,7 +186,7 @@ public class QuestionBankController {
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<QuestionBankVO>> listQuestionBankVOByPage(@RequestBody QuestionBankQueryRequest questionBankQueryRequest,
-                                                               HttpServletRequest request) {
+                                                                       HttpServletRequest request) {
         long current = questionBankQueryRequest.getCurrent();
         long size = questionBankQueryRequest.getPageSize();
         // 限制爬虫
@@ -179,7 +199,7 @@ public class QuestionBankController {
     }
 
     /**
-     * 分页获取当前登录用户创建的题库表列表
+     * 分页获取当前登录用户创建的题库列表
      *
      * @param questionBankQueryRequest
      * @param request
@@ -187,7 +207,7 @@ public class QuestionBankController {
      */
     @PostMapping("/my/list/page/vo")
     public BaseResponse<Page<QuestionBankVO>> listMyQuestionBankVOByPage(@RequestBody QuestionBankQueryRequest questionBankQueryRequest,
-                                                                 HttpServletRequest request) {
+                                                                         HttpServletRequest request) {
         ThrowUtils.throwIf(questionBankQueryRequest == null, ErrorCode.PARAMS_ERROR);
         // 补充查询条件，只查询当前登录用户的数据
         User loginUser = userService.getLoginUser(request);
@@ -204,13 +224,14 @@ public class QuestionBankController {
     }
 
     /**
-     * 编辑题库表（给用户使用）
+     * 编辑题库（给用户使用）
      *
      * @param questionBankEditRequest
      * @param request
      * @return
      */
     @PostMapping("/edit")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> editQuestionBank(@RequestBody QuestionBankEditRequest questionBankEditRequest, HttpServletRequest request) {
         if (questionBankEditRequest == null || questionBankEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
