@@ -96,7 +96,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         String searchText = questionQueryRequest.getSearchText();
         String sortField = questionQueryRequest.getSortField();
         String sortOrder = questionQueryRequest.getSortOrder();
-        List<String> tagList = questionQueryRequest.getTags();
+        List<String> tagList = questionQueryRequest.getTagList();
         Long userId = questionQueryRequest.getUserId();
         String answer = questionQueryRequest.getAnswer();
         // todo 补充需要的查询条件
