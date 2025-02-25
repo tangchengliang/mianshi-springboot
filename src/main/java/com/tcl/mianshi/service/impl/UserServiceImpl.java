@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.tcl.mianshi.common.ErrorCode;
 import com.tcl.mianshi.constant.CommonConstant;
+import com.tcl.mianshi.constant.RedisConstant;
 import com.tcl.mianshi.exception.BusinessException;
 import com.tcl.mianshi.mapper.UserMapper;
 import com.tcl.mianshi.model.dto.user.UserQueryRequest;
@@ -16,13 +17,17 @@ import com.tcl.mianshi.model.vo.LoginUserVO;
 import com.tcl.mianshi.model.vo.UserVO;
 import com.tcl.mianshi.service.UserService;
 import com.tcl.mianshi.utils.SqlUtils;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RBitSet;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -40,6 +45,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      * 盐值，混淆密码
      */
     public static final String SALT = "tcl";
+
+    @Resource
+    private RedissonClient redissonClient;
 
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
@@ -268,4 +276,61 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 sortField);
         return queryWrapper;
     }
+
+    /**
+     * 添加用户签到记录
+     *
+     * @param userId 用户签到
+     * @return 当前是否已签到成功
+     */
+    public boolean addUserSignIn(long userId) {
+        LocalDate date = LocalDate.now();
+        String key = RedisConstant.getUserSignInRedisKey(date.getYear(), userId);
+        RBitSet signInBitSet = redissonClient.getBitSet(key);
+        // 获取当前日期是一年中的第几天，作为偏移量（从 1 开始计数）
+        int offset = date.getDayOfYear();
+        // 检查当天是否已经签到
+        if (!signInBitSet.get(offset)) {
+            // 如果当天还未签到，则设置
+            return signInBitSet.set(offset, true);
+        }
+        // 当天已签到
+        return true;
+    }
+
+    @Override
+    public List<Integer> getUserSignInRecord(long userId, Integer year) {
+        if (year == null) {
+            LocalDate date = LocalDate.now();
+            year = date.getYear();
+        }
+        String key = RedisConstant.getUserSignInRedisKey(year, userId);
+        RBitSet signInBitSet = redissonClient.getBitSet(key);
+
+        BitSet bitSet = signInBitSet.asBitSet();
+        List<Integer> dayList = new ArrayList<>();
+        int index = bitSet.nextSetBit(0);
+        while (index>0){
+            dayList.add(index);
+            index = bitSet.nextSetBit(index+1);
+        }
+        return dayList;
+        // 下面方法会返回过多无用数据
+//        // LinkedHashMap 保证有序
+//        Map<LocalDate, Boolean> result = new LinkedHashMap<>();
+//        // 获取当前年份的总天数
+//        int totalDays = Year.of(year).length();
+//        // 依次获取每一天的签到状态
+//        for (int dayOfYear = 1; dayOfYear <= totalDays; dayOfYear++) {
+//            // 获取 key：当前日期
+//            LocalDate currentDate = LocalDate.ofYearDay(year, dayOfYear);
+//            // 获取 value：当天是否有刷题
+//            boolean hasRecord = signInBitSet.get(dayOfYear);
+//            // 将结果放入 map
+//            result.put(currentDate, hasRecord);
+//        }
+//        return result;
+    }
+
+
 }
