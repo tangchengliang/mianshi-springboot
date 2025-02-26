@@ -10,10 +10,7 @@ import com.tcl.mianshi.common.ResultUtils;
 import com.tcl.mianshi.constant.UserConstant;
 import com.tcl.mianshi.exception.BusinessException;
 import com.tcl.mianshi.exception.ThrowUtils;
-import com.tcl.mianshi.model.dto.question.QuestionAddRequest;
-import com.tcl.mianshi.model.dto.question.QuestionEditRequest;
-import com.tcl.mianshi.model.dto.question.QuestionQueryRequest;
-import com.tcl.mianshi.model.dto.question.QuestionUpdateRequest;
+import com.tcl.mianshi.model.dto.question.*;
 import com.tcl.mianshi.model.entity.Question;
 import com.tcl.mianshi.model.entity.User;
 import com.tcl.mianshi.model.vo.QuestionVO;
@@ -258,5 +255,13 @@ public class QuestionController {
         ThrowUtils.throwIf(size > 200, ErrorCode.PARAMS_ERROR);
         Page<Question> questionPage = questionService.searchFromEs(questionQueryRequest);
         return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
+    }
+
+    @PostMapping("/delete/batch")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> batchDeleteQuestions(@RequestBody QuestionBatchDeleteRequest questionBatchDeleteRequest) {
+        ThrowUtils.throwIf(questionBatchDeleteRequest == null, ErrorCode.PARAMS_ERROR);
+        questionService.batchDeleteQuestions(questionBatchDeleteRequest.getQuestionIdList());
+        return ResultUtils.success(true);
     }
 }
