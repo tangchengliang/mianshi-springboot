@@ -45,7 +45,7 @@ public class QuestionQueryRequest extends PageRequest implements Serializable {
     /**
      * 标签列表
      */
-    private List<String> tagList;
+    private List<String> tags;
 
     /**
      * 推荐答案
