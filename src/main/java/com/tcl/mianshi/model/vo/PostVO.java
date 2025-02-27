@@ -1,5 +1,6 @@
 package com.tcl.mianshi.model.vo;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.tcl.mianshi.model.entity.Post;
 import java.io.Serializable;
@@ -105,7 +106,9 @@ public class PostVO implements Serializable {
         }
         PostVO postVO = new PostVO();
         BeanUtils.copyProperties(post, postVO);
-        postVO.setTagList(JSONUtil.toList(post.getTags(), String.class));
+        if (StrUtil.isNotBlank(post.getTags())) {
+            postVO.setTagList(JSONUtil.toList(JSONUtil.parseArray(post.getTags()), String.class));
+        }
         return postVO;
     }
 }
