@@ -41,7 +41,7 @@ public class SentinelRulesManager {
         // 单 IP 查看题目列表限流规则
         ParamFlowRule rule = new ParamFlowRule(SentinelConstant.listQuestionVOByPage)
                 .setParamIdx(0) // 对第 0 个参数限流，即 IP 地址
-                .setCount(60) // 每分钟最多 60 次
+                .setCount(5) // 每分钟最多 60 次
                 .setDurationInSec(60); // 规则的统计周期为 60 秒
         ParamFlowRuleManager.loadRules(Collections.singletonList(rule));
     }
