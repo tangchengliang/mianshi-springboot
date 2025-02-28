@@ -1,4 +1,4 @@
-package com.tcl.mianshi.testSential;
+package com.tcl.mianshi.sentinel;
 
 import com.alibaba.csp.sentinel.Entry;
 import com.alibaba.csp.sentinel.SphU;
@@ -10,7 +10,11 @@ import com.alibaba.csp.sentinel.slots.block.flow.FlowRuleManager;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Test {
+/**
+ * 限流测试
+ *
+ */
+public class SentinelTest {
 
     public static void main(String[] args) {
         // 配置规则.
@@ -28,7 +32,7 @@ public class Test {
         }
     }
 
-    private static void initFlowRules(){
+    private static void initFlowRules() {
         List<FlowRule> rules = new ArrayList<>();
         FlowRule rule = new FlowRule();
         rule.setResource("HelloWorld");
