@@ -127,6 +127,12 @@
             <artifactId>sa-token-spring-boot-starter</artifactId>
             <version>1.39.0</version>
         </dependency>
+        <!--https://www.volcengine.com/docs/82379/1319854 -->
+        <dependency>
+            <groupId>com.volcengine</groupId>
+            <artifactId>volcengine-java-sdk-ark-runtime</artifactId>
+            <version>0.1.153</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

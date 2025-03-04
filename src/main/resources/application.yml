@@ -139,3 +139,7 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.tcl.mianshi.controller
+
+ai:
+  apikey: xxx
+  base-url: https://ark.cn-beijing.volces.com/api/v3
