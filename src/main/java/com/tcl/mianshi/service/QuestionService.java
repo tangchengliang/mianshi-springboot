@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.tcl.mianshi.model.dto.question.QuestionQueryRequest;
 import com.tcl.mianshi.model.entity.Question;
+import com.tcl.mianshi.model.entity.User;
 import com.tcl.mianshi.model.vo.QuestionVO;
 
 import javax.servlet.http.HttpServletRequest;
@@ -75,4 +76,6 @@ public interface QuestionService extends IService<Question> {
      */
 
     void batchDeleteQuestions(List<Long> questionIdList);
+
+    boolean aiGenerateQuestions(String questionType, int number, User loginUser);
 }
