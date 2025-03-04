@@ -45,6 +45,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -379,15 +381,28 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
                 .map(line -> line.replace("`", "")) // 移除 `
                 .collect(Collectors.toList());
         // 5. 保存题目到数据库中
-        List<Question> questionList = titleList.stream().map(title -> {
-            Question question = new Question();
-            question.setTitle(title);
-            question.setUserId(user.getId());
-            question.setTags("[\"待审核\"]");
-            // 优化点：可以并发生成
-            question.setAnswer(aiGenerateQuestionAnswer(title));
-            return question;
-        }).collect(Collectors.toList());
+        List<CompletableFuture<Question>> futures = titleList.stream()
+                .map(title -> CompletableFuture.supplyAsync(() -> {
+                    log.info("开始寻找答案-{}", title);
+                    Question question = new Question();
+                    question.setTitle(title);
+                    question.setUserId(user.getId());
+                    question.setTags("[\"待审核\"]");
+                    question.setAnswer(aiGenerateQuestionAnswer(title)); // 并发执行答案生成
+                    return question;
+                }))
+                .collect(Collectors.toList());
+
+        List<Question> questionList = futures.stream()
+                .map(future -> {
+                    try {
+                        return future.get(); // 等待每个Future完成并获取结果
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new RuntimeException("生成题目或答案时出错", e);
+                    }
+                })
+                .collect(Collectors.toList());
+
         boolean result = this.saveBatch(questionList);
         if (!result) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "保存题目失败");
